@@ -7,26 +7,25 @@ import matplotlib.pyplot as plt
 import itertools
 
 
-def create_data(num_features: int = 4):
+def create_data(x_training, variance=0.01, degree: int = 4):
     np.random.seed(42)
 
-    x_training = np.array([-0.9, -0.8, 0.05, 0.1, 0.15, 0.9, 0.95])
     X = x_training[:, np.newaxis]
-    y = X**2 - X
+    y = X**2 - X + np.random.normal(0, variance, X.shape)
     y_training = y.squeeze()
 
     # Create polynomial features
-    poly_features = PolynomialFeatures(degree=num_features)
+    poly_features = PolynomialFeatures(degree=degree)
     X_poly = poly_features.fit_transform(X)
 
     x_interval = np.linspace(-1.0, 1.0, 1000)
     y_interval = np.linspace(-3.0, 3.0, 1000)
 
-    return X_poly, y, x_interval, y_interval, x_training, y_training
+    return X_poly, y, x_interval, y_interval, y_training
 
 
-def create_test_data(x_interval, num_features: int = 4):
-    poly_features = PolynomialFeatures(degree=num_features)
+def create_test_data(x_interval, degree: int = 4):
+    poly_features = PolynomialFeatures(degree=degree)
     X_pred = x_interval.reshape(-1, 1)
     X_pred_poly = poly_features.fit_transform(X_pred)
     return X_pred_poly
@@ -71,6 +70,19 @@ def create_subspaces_all_permutations(num_subspaces):
         list(itertools.combinations(range(num_subspaces), num_comb))
         for num_comb in range(1, num_subspaces)
     )
+    combs = list(itertools.chain.from_iterable(combs))
+    combs.append([i for i in range(num_subspaces)])
+    t_combs = []
+    for comb in combs:
+        if len(comb) == 1:
+            t_combs.append([comb[0]])
+        else:
+            t_combs.append(comb)
+    return t_combs
+
+
+def create_subspaces_permutations(num_subspaces, hierarchies):
+    combs = list(itertools.combinations(range(num_subspaces), hierarchies))
     combs = list(itertools.chain.from_iterable(combs))
     combs.append([i for i in range(num_subspaces)])
     t_combs = []
