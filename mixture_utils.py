@@ -32,7 +32,7 @@ def create_test_data(x_interval, degree: int = 4):
 
 
 def fit_linear_regression(X_poly, y):
-    theta = np.linalg.inv(X_poly.T @ X_poly) @ X_poly.T @ y
+    theta = np.linalg.pinv(X_poly.T @ X_poly) @ X_poly.T @ y
     return theta
 
 
@@ -48,7 +48,7 @@ def calc_gaussian_probabilities(mean, variance, y_interval):
 
 def get_pnml_normalization_factor(X_pred_poly, X_poly, x_inv=None):
     if x_inv is None:
-        x_inv = np.linalg.inv(X_poly.T @ X_poly)
+        x_inv = np.linalg.pinv(X_poly.T @ X_poly)
     return 1 + np.diag(X_pred_poly @ x_inv @ X_pred_poly.T)
 
 
@@ -57,6 +57,7 @@ def calc_subspace_prediction(X_pred_poly, X_poly, y, U, s, subspace):
         s_mat_inv = np.diag(1 / s[[subspace]].squeeze())
     else:
         s_mat_inv = np.diag(1 / s[subspace])
+    s_mat_inv[s_mat_inv > 1e6] = 0
     U_subspace = U[:, subspace]
 
     x_inv_subspace = U_subspace @ s_mat_inv @ U_subspace.T
@@ -68,10 +69,24 @@ def calc_subspace_prediction(X_pred_poly, X_poly, y, U, s, subspace):
 def create_subspaces_all_permutations(num_subspaces):
     combs = list(
         list(itertools.combinations(range(num_subspaces), num_comb))
-        for num_comb in range(1, num_subspaces)
+        for num_comb in range(1, num_subspaces + 1)
     )
     combs = list(itertools.chain.from_iterable(combs))
-    combs.append([i for i in range(num_subspaces)])
+    t_combs = []
+    for comb in combs:
+        if len(comb) == 1:
+            t_combs.append([comb[0]])
+        else:
+            t_combs.append(comb)
+    return t_combs
+
+
+def create_subspaces_all_permutations_overparameterized(num_subspaces, limit):
+    combs = list(
+        list(itertools.combinations(range(num_subspaces), num_comb))
+        for num_comb in range(1, limit + 1)
+    )
+    combs = list(itertools.chain.from_iterable(combs))
     t_combs = []
     for comb in combs:
         if len(comb) == 1:
